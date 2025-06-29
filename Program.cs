@@ -17,14 +17,11 @@ namespace Logging
 
     public class Pathfinder
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public Pathfinder(ILogger logger)
         {
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
-
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void Find(string message) =>
@@ -35,10 +32,6 @@ namespace Logging
     {
         void WriteError(string message);
     }
-
-    public interface ISecureLogger : ILogger { }
-
-    public interface IUniversalLogger : ILogger { }
 
     public class ConsoleLogWriter : ILogger
     {
@@ -52,16 +45,13 @@ namespace Logging
             File.WriteAllText("log.txt", message);
     }
 
-    public class SecureLogWriter : ISecureLogger
+    public class SecureLogWriter : ILogger
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public SecureLogWriter(ILogger logger)
         {
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
-
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void WriteError(string message)
@@ -71,21 +61,15 @@ namespace Logging
         }
     }
 
-    public class UniversalLogWriter : IUniversalLogger
+    public class UniversalLogWriter : ILogger
     {
-        private ILogger _basicLogger;
-        private ISecureLogger _additionalSecureLogger;
+        private readonly ILogger _basicLogger;
+        private readonly ILogger _additionalSecureLogger;
 
-        public UniversalLogWriter(ILogger basicLogger, ISecureLogger additionalSecureLogger)
+        public UniversalLogWriter(ILogger basicLogger, ILogger additionalSecureLogger)
         {
-            if (basicLogger == null)
-                throw new ArgumentNullException(nameof(basicLogger));
-
-            if (additionalSecureLogger == null)
-                throw new ArgumentNullException(nameof(additionalSecureLogger));
-
-            _basicLogger = basicLogger;
-            _additionalSecureLogger = additionalSecureLogger;
+            _basicLogger = basicLogger ?? throw new ArgumentNullException(nameof(basicLogger));
+            _additionalSecureLogger = additionalSecureLogger ?? throw new ArgumentNullException(nameof(additionalSecureLogger));
         }
 
         public void WriteError(string message)
