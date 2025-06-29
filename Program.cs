@@ -11,7 +11,7 @@ namespace Logging
             Pathfinder pathfinderFile = new Pathfinder(new FileLogWriter());
             Pathfinder pathfinderSecureConsole = new Pathfinder(new SecureLogWriter(new ConsoleLogWriter()));
             Pathfinder pathfinderSecureFile = new Pathfinder(new SecureLogWriter(new FileLogWriter()));
-            Pathfinder pathfinderUniversal = new Pathfinder(new UniversalLogWriter(new SecureLogWriter(new FileLogWriter())));
+            Pathfinder pathfinderUniversal = new Pathfinder(new UniversalLogWriter(new ConsoleLogWriter(), new SecureLogWriter(new FileLogWriter())));
         }
     }
 
@@ -37,6 +37,8 @@ namespace Logging
     }
 
     public interface ISecureLogger : ILogger { }
+
+    public interface IUniversalLogger : ILogger { }
 
     public class ConsoleLogWriter : ILogger
     {
@@ -69,22 +71,27 @@ namespace Logging
         }
     }
 
-    public class UniversalLogWriter : ConsoleLogWriter
+    public class UniversalLogWriter : IUniversalLogger
     {
-        private ISecureLogger _secureLogger;
+        private ILogger _basicLogger;
+        private ISecureLogger _additionalSecureLogger;
 
-        public UniversalLogWriter(ISecureLogger secureLogger)
+        public UniversalLogWriter(ILogger basicLogger, ISecureLogger additionalSecureLogger)
         {
-            if (_secureLogger == null)
-                throw new ArgumentNullException(nameof(secureLogger));
+            if (basicLogger == null)
+                throw new ArgumentNullException(nameof(basicLogger));
 
-            _secureLogger = secureLogger;
+            if (additionalSecureLogger == null)
+                throw new ArgumentNullException(nameof(additionalSecureLogger));
+
+            _basicLogger = basicLogger;
+            _additionalSecureLogger = additionalSecureLogger;
         }
 
-        public override void WriteError(string message)
+        public void WriteError(string message)
         {
-            base.WriteError(message);
-            _secureLogger.WriteError(message);
+            _basicLogger.WriteError(message);
+            _additionalSecureLogger.WriteError(message);
         }
     }
 }
