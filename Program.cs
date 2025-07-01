@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Logging
@@ -11,7 +12,14 @@ namespace Logging
             Pathfinder pathfinderFile = new Pathfinder(new FileLogWriter());
             Pathfinder pathfinderSecureConsole = new Pathfinder(new SecureLogWriter(new ConsoleLogWriter()));
             Pathfinder pathfinderSecureFile = new Pathfinder(new SecureLogWriter(new FileLogWriter()));
-            Pathfinder pathfinderUniversal = new Pathfinder(new UniversalLogWriter(new ConsoleLogWriter(), new SecureLogWriter(new FileLogWriter())));
+
+            List<ILogger> loggers = new List<ILogger>
+            {
+                new ConsoleLogWriter(),
+                new SecureLogWriter(new FileLogWriter())
+            };
+
+            Pathfinder pathfinderUniversal = new Pathfinder(new UniversalLogWriter(loggers));
         }
     }
 
@@ -41,12 +49,15 @@ namespace Logging
 
     public class FileLogWriter : ILogger
     {
+        private readonly string _filePath = "log.txt";
+
         public virtual void WriteError(string message) =>
-            File.WriteAllText("log.txt", message);
+            File.WriteAllText(_filePath, message);
     }
 
     public class SecureLogWriter : ILogger
     {
+        private readonly DayOfWeek _dayOfWeekToWriteLod = DayOfWeek.Friday;
         private readonly ILogger _logger;
 
         public SecureLogWriter(ILogger logger)
@@ -56,26 +67,24 @@ namespace Logging
 
         public void WriteError(string message)
         {
-            if (DateTime.Now.DayOfWeek == DayOfWeek.Friday)
+            if (DateTime.Now.DayOfWeek == _dayOfWeekToWriteLod)
                 _logger.WriteError(message);
         }
     }
 
     public class UniversalLogWriter : ILogger
     {
-        private readonly ILogger _basicLogger;
-        private readonly ILogger _additionalSecureLogger;
+        private IEnumerable<ILogger> _loggers;
 
-        public UniversalLogWriter(ILogger basicLogger, ILogger additionalSecureLogger)
+        public UniversalLogWriter(IEnumerable<ILogger> loggers)
         {
-            _basicLogger = basicLogger ?? throw new ArgumentNullException(nameof(basicLogger));
-            _additionalSecureLogger = additionalSecureLogger ?? throw new ArgumentNullException(nameof(additionalSecureLogger));
+            _loggers = loggers ?? throw new ArgumentNullException(nameof(loggers));
         }
 
         public void WriteError(string message)
         {
-            _basicLogger.WriteError(message);
-            _additionalSecureLogger.WriteError(message);
+            foreach (var logger in _loggers)
+                logger.WriteError(message);
         }
     }
 }
